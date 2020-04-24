@@ -114,7 +114,7 @@ class PhysicsInformedNN:
     def net_f(self, x, t):
         u = self.net_u(x, t)
         u_x = torch.autograd.grad(u, x, grad_outputs = torch.ones([len(x),1], dtype = torch.float), create_graph = True)
-        u_xx = torch.autograd.grad(u, x, grad_outputs = torch.ones([len(x),1], dtype = torch.float), create_graph = True)
+        u_xx = torch.autograd.grad(u_x, x, grad_outputs = torch.ones([len(x),1], dtype = torch.float), create_graph = True)
         u_t = torch.autograd.grad(u,t,grad_outputs = torch.ones([len(t),1], dtype = torch.float), create_graph = True)
 
         f = u_t[0] + u * u_x[0] - self.nu * u_xx[0]
@@ -122,8 +122,11 @@ class PhysicsInformedNN:
         return f
 
     def calc_loss(self, u_pred, u_true, f_pred):
-        losses = torch.mean(torch.mul(u_pred - u_true, u_pred - u_true)) + torch.mean(torch.mul(f_pred, f_pred))
-
+        u_error = u_pred - u_true
+        loss_u = torch.mean(torch.mul(u_error, u_error))
+        loss_f = torch.mean(torch.mul(f_pred, f_pred))
+        losses = loss_u + loss_f
+        print('Loss: %.4f, U_loss: %.4f, F_loss: %.4f' %(losses, loss_u, loss_f))
         return losses
 
 
@@ -155,7 +158,7 @@ class PhysicsInformedNN:
 
             # Optimize the parameters through the optimization step and the learning rate.
 
-            self.optimizer.step(self.closure)
+            self.optimizer.step()
 
             # Repeat the prediction, calculation of losses, and optimization a number of times to optimize the network.
 
@@ -214,15 +217,39 @@ if __name__ == "__main__":
 
 pinn.model
 
-pinn.set_optimizer(torch.optim.SGD(pinn.model.parameters(),lr = 1e-5))
-pinn.train()
+# Run this model with SGD for 2K-3K epochs. Then switch to Adam. Use default Learning Rates. You should observe a good convergence by the time you 7K epochs.
+pinn.set_optimizer(torch.optim.Adam(pinn.model.parameters(),lr = 1e-3))
+
+for _ in range(0,10):
+    pinn.train()
 plt.plot(np.linspace(0,len(pinn.losses),num=len(pinn.losses)),pinn.losses)
-pinn.model(torch.tensor(X_star).float())
+
+u_pred = pinn.model(torch.tensor(X_star).float())
+
+u_pred2 = pinn.net_u(torch.tensor(X_star[:,0:1]).float(), torch.tensor(X_star[:,1:2]).float())
+
+u_pred == u_pred2 # Sanity Check
+
 np.linalg.norm(u_star - pinn.model(torch.tensor(X_star).float()).detach().numpy(),2)/np.linalg.norm(u_star,2)
 
 U_pred = griddata(X_star, pinn.model(torch.tensor(X_star).float()).detach().numpy().flatten(), (X, T), method='cubic')
 np.mean(np.abs(Exact-U_pred))/np.mean(np.abs(Exact))
 pinn.losses[-1]
+
+# %%
+"""
+Contour plot of the Exact Solution
+"""
+plt.contourf(X,T,Exact)
+# %%
+
+# %%
+"""
+Contour plot of the Predicted Solution
+"""
+plt.contourf(X,T,u_pred.detach().numpy().reshape([100,256]))
+# %%
+
 
 fig,ax = plt.subplots()
 
