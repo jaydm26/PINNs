@@ -23,3 +23,6 @@ For more information, please refer to the following: (https://maziarraissi.githu
       journal={arXiv preprint arXiv:1711.10566},
       year={2017}
     }
+
+### Added by Jay Mehta
+This is my forked repo from the original where I attempt to improve pedagocical understanding of the PINNs through the use of canonical examples from the Fluid Dynamics, Control Systems, and Heat Transfer.
