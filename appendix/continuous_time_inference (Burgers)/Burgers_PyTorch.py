@@ -197,11 +197,12 @@ if __name__ == "__main__":
     lb = X_star.min(0)
     ub = X_star.max(0)
 
-    xx1 = np.hstack((X[0:1,:].T, T[0:1,:].T))
+    T[0:1,:].T
+    xx1 = np.hstack((X[0:1,:].T, T[0:1,:].T)) # Initial Conditions
     uu1 = Exact[0:1,:].T
-    xx2 = np.hstack((X[:,0:1], T[:,0:1]))
+    xx2 = np.hstack((X[:,0:1], T[:,0:1])) # Boundary Condition 1
     uu2 = Exact[:,0:1]
-    xx3 = np.hstack((X[:,-1:], T[:,-1:]))
+    xx3 = np.hstack((X[:,-1:], T[:,-1:])) # Boundary Condition 2
     uu3 = Exact[:,-1:]
 
     X_u_train = np.vstack([xx1, xx2, xx3])
